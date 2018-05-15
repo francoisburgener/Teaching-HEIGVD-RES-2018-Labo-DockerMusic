@@ -1,13 +1,13 @@
 // UDP Sample Server
 var HOST = '0.0.0.0';
 var MULTICAST_ADRESS = '239.255.36.36'
-var PORT_UDP = 58318;
+var PORT_UDP = 8888;
 const PORT_TCP = 2205;
 
 var dgram = require("dgram");
 var moment = require("moment");
 var server_udp = dgram.createSocket("udp4");
-const net = require('net');
+var net = require('net');
 
 var tabMusicien = new Map()
 
@@ -63,6 +63,7 @@ function checkActivity(){
         var diff = moment.duration(now.diff(rec)).as("seconds")
 
         if(diff > 5){
+			console.log("Musicien supprimé " + diff + "s") 
             tabMusicien.delete(key)
         }
     }
