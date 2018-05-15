@@ -9,21 +9,51 @@ var moment = require("moment");
 var server_udp = dgram.createSocket("udp4");
 const net = require('net');
 
-
-var mapMusicien = new Map();
 var tabMusicien = new Map()
-
-mapMusicien.set("ti-ta-ti", "piano");
-mapMusicien.set("pouet", "trumpet");
-mapMusicien.set("trulu", "flute");
-mapMusicien.set("gzi-gzi", "violin");
-mapMusicien.set("boum-boum", "drum");
 
 function Musicien(uuid,instrument,activeSince){
     this.uuid = uuid;
     this.instrument = instrument;
     this.activeSince = activeSince;
 }
+
+/*******************************************
+*                  TCP                     *
+********************************************/
+tcp_server = net.createServer(onClientConnected);
+tcp_server.listen(PORT_TCP, HOST);
+console.log("TCP Server listing on " + HOST + ":" + PORT_TCP);
+
+function onClientConnected(socket) {
+    var tabMusiciens = []
+
+    for(var [key,value] of tabMusicien){
+        tabMusiciens.push(value);
+    }
+    socket.write(JSON.stringify(tabMusiciens));
+    socket.destroy();
+}
+
+
+/*******************************************
+*                  UDP                     *
+********************************************/
+
+server_udp.bind(PORT_UDP, function(){
+	console.log("Un auditeur a rejoind le concert");
+	server_udp.addMembership(MULTICAST_ADRESS);
+});
+
+server_udp.on("listening", function () {
+    var address = server_udp.address();
+    console.log("UDP Server listening " + address.address + ":" + address.port);
+});
+
+server_udp.on("message", function (msg, rinfo) {
+    console.log(msg.toString())
+    var jsonObject = JSON.parse(msg.toString());
+    tabMusicien.set(jsonObject.id, new Musicien(jsonObject.id,jsonObject.name,moment().format("YYYY-MM-DD HH:mm:ss")));
+});
 
 function checkActivity(){
     for(var [key,value] of tabMusicien){
@@ -38,42 +68,4 @@ function checkActivity(){
     }
 }
 
-/*******************************************
-*                  UDP                     *
-********************************************/
-server_udp.on("listening", function () {
-    var address = server_udp.address();
-    console.log("server listening " + address.address + ":" + address.port);
-});
-
-
-server_udp.on("message", function (msg, rinfo) {
-    console.log(msg.toString())
-    var jsonObject = JSON.parse(msg.toString());
-    tabMusicien.set(jsonObject.id, new Musicien(jsonObject.id,mapMusicien.get(jsonObject.noise),moment().format("YYYY-MM-DD HH:mm:ss")));
-});
-
-
-server_udp.bind(PORT_UDP, function(){
-	console.log("Un auditeur a rejoind le concert");
-	server_udp.addMembership(MULTICAST_ADRESS);
-});
-
 setInterval(checkActivity,1000)
-
-
-/*******************************************
-*                  TCP                     *
-********************************************/
-tcp_server = net.createServer(onClientConnected);
-tcp_server.listen(PORT_TCP, HOST);
-
-function onClientConnected(socket) {
-    var tabMusiciens = []
-
-    for(var [key,value] of tabMusicien){
-        tabMusiciens.push(value);
-    }
-    socket.write(JSON.stringify(tabMusiciens));
-    socket.destroy();
-}

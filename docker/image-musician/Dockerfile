@@ -5,3 +5,4 @@ RUN npm init -y
 RUN npm install --save uuid
 RUN npm install --save dgram
 ENTRYPOINT ["node", "/opt/app/musician.js"]
+CMD["piano"]
